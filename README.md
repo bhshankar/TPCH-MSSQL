@@ -57,7 +57,7 @@ Execute `run-tpch.sh` to generate data, queries, load data into the database, an
     # scheme defaults to 'http'.
 
     static_configs:
-      - targets: ["genoa4.eng.memverge.com:9399"]
+      - targets: ["machine-name.domain.com:9399"]
         labels:
           group: "cxl"
  ```
@@ -74,7 +74,7 @@ Execute `run-tpch.sh` to generate data, queries, load data into the database, an
     # scheme defaults to 'http'.
 
     static_configs:
-      - targets: ["genoa4.eng.memverge.com:8082"]
+      - targets: ["machine-name.domain.com:8082"]
         labels:
           group: "cxl"
  ```
