@@ -4,7 +4,6 @@ export SA_PASSWORD="Memverge#123"
 
 SCRIPT_DIR_NAME=$( dirname $( readlink -f $0 ))
 DATA_DIR="${SCRIPT_DIR_NAME}/dbgen"
-MSSQL_DATA_DIR="/nvme1/data"
 
 function wait-for-sql()
 {
@@ -245,7 +244,7 @@ function power-test()
 
     local NUM_RUNS=3 # Set your desired number of runs here
 
-    echo "Runnung TPC-H Power test..."
+    echo "Running TPC-H Power test..."
     echo "Run,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,Total,Percentage Deviation" > tmp.csv
 
     declare -a total_times
@@ -286,7 +285,7 @@ function throughput-test()
         return
     fi
 
-    echo "Runnung TPC-H Throughput test..."
+    echo "Running TPC-H Throughput test..."
     echo "Run,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,Total,Percentage Deviation" > tmp.csv
 
 
@@ -358,15 +357,32 @@ function throughput-test()
 
 } 
 
+function clean-up()
+{
+    if [ -z ${CLEANUP} ];
+    then
+        return
+    fi
+    echo "Stopping the container mssql"
+    sudo docker container stop mssql 
+    echo "Removing the container mssql"
+    sudo docker container rm mssql 
+    echo "Removing the data directory ${MSSQL_DATA_DIR}/mssql"
+    sudo rm -rf ${MSSQL_DATA_DIR}/mssql 
+}
+
 
 function print_usage()
 {
-    echo "      -d                    : generate data - scale d"
-    echo "      -q                    : generate query - number of queries q"
-    echo "      -l                    : load the data into database"
-    echo "      -w                    : warm up the database"
-    echo "      -p                    : run the Power test"
-    echo "      -t                    : run the Throughput Test "
+    echo -e "$(basename $0): Usage"
+    echo "    $(basename $0) "
+    echo "      -s   : generate data - scale d"
+    echo "      -q   : generate query - number of query sets q"
+    echo "      -l   : load the data into database"
+    echo "      -w   : warm up the database"
+    echo "      -p   : run the Power test"
+    echo "      -t   : run the Throughput Test "
+    echo "      -c   : clean up the data base and containers "
 }
 
 
@@ -377,13 +393,13 @@ then
 fi
 
 
-while getopts 'd:q:wplt' opt; do
+while getopts 's:q:wpltcd:' opt; do
     case "$opt" in
-       d)
-           DATA_SIZE=$OPTARG
+       s)
+           DATA_SIZE=${OPTARG}
        ;;
        q)
-           QUERY_NUM=$OPTARG
+           QUERY_NUM=${OPTARG}
        ;;
        w)
            WARM_DB=1
@@ -397,6 +413,12 @@ while getopts 'd:q:wplt' opt; do
        t)
            THROUGHPUT_TEST=1
        ;;       
+       c)
+           CLEANUP=1
+       ;;       
+       d)
+           MSSQL_DATA_DIR=${OPTARG}
+       ;;       
        ?|h)
            print_usage
            exit 0
@@ -404,6 +426,20 @@ while getopts 'd:q:wplt' opt; do
     esac
 done
 
+if [ -z ${MSSQL_DATA_DIR} ];
+then
+    echo "[ERROR]: the data dir option -d is required"
+    print_usage
+    exit 1
+fi
+
+if [ ! -d ${MSSQL_DATA_DIR} ];
+then
+    echo "[ERROR]: the data dir ${MSSQL_DATA_DIR} does not exist"
+    echo "         create the directory and restart the script"
+    print_usage
+    exit 1
+fi
 
 generate-data
 generate-queries
@@ -415,3 +451,4 @@ check-mssql
 warm-the-database
 power-test
 throughput-test
+clean-up
