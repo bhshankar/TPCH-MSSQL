@@ -1,3 +1,6 @@
+# This repository is being deprecated and moved into Benchmarks/TPCH-MSSQL
+## For all practical purposes, any user should consider this reposirtory as dead.
+
 # TPCH-scripts
 This repository contains scripts to set up and execute the TPC-H benchmark.
 
